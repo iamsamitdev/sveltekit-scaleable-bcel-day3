@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+
+@layer base {
+    html {
+        @apply scroll-smooth;
+    }
+    
+    body {
+        font-family: "Inter", "Anuphan", sans-serif;
+        font-weight: normal;
+    }
+}
