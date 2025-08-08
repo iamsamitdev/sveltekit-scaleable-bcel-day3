@@ -12,17 +12,17 @@ export const handle: Handle = async ({ event, resolve }) => {
     // เก็บ token ไว้ใน locals เสมอ แม้ถอดรหัสไม่ได้ เพื่อใช้เป็นสัญญาณว่า login แล้ว
     event.locals.token = token
     try {
-      // 2) ถอดรหัส payload ของ JWT แบบปลอดภัยฝั่ง server
-      const [, payloadBase64] = token.split(".")
-      const json = Buffer.from(payloadBase64, "base64").toString("utf-8")
-      const payload = JSON.parse(json)
-
-      // 3) ตรวจสอบวันหมดอายุและตั้งค่า locals ให้โหลดฝั่ง server เข้าถึงได้
-      if (!payload?.exp || payload.exp > Date.now() / 1000) {
-        event.locals.user = payload.user ?? event.locals.user
+      // ป้องกันกรณี token ไม่มีจุด 2 จุด
+      const parts = token.split(".")
+      if (parts.length === 3) {
+        const payloadBase64 = parts[1]
+        const json = Buffer.from(payloadBase64, "base64").toString("utf-8")
+        const payload = JSON.parse(json)
+        if (!payload?.exp || payload.exp > Date.now() / 1000) {
+          event.locals.user = payload.user ?? event.locals.user
+        }
       }
     } catch (error) {
-      // ถอดรหัสไม่ผ่านก็ปล่อยผ่านไปแบบไม่ตั้งค่า user
       console.error("Invalid token:", error)
     }
   }

@@ -46,13 +46,13 @@
     <p class="mt-2 text-gray-600">{error?.message || 'ขออภัยในความไม่สะดวก กรุณาลองใหม่อีกครั้งหรือติดต่อผู้ดูแลระบบ'}</p>
 
     <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-      <button type="button" class="px-5 h-11 rounded-lg bg-gray-900 hover:bg-black text-white" onclick={goHome}>
+      <button type="button" class="px-5 h-11 rounded-lg bg-gray-900 hover:bg-black text-white cursor-pointer" onclick={goHome}>
         {isAdmin ? 'ไปหน้า Dashboard' : 'กลับหน้าแรก'}
       </button>
-      <button type="button" class="px-5 h-11 rounded-lg bg-white border border-gray-300 text-gray-800 hover:bg-gray-50" onclick={goBack}>
+      <button type="button" class="px-5 h-11 rounded-lg bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 cursor-pointer" onclick={goBack}>
         ย้อนกลับ
       </button>
-      <button type="button" class="px-5 h-11 rounded-lg bg-blue-600 text-white hover:bg-blue-700" onclick={retry}>
+      <button type="button" class="px-5 h-11 rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer" onclick={retry}>
         ลองใหม่
       </button>
     </div>

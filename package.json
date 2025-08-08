@@ -8,14 +8,22 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"db:migrate": "bunx prisma migrate dev --name init",
+		"db:generate": "bunx prisma generate",
+		"db:seed": "bun run prisma/seed.ts",
+		"db:reset": "bun run db:migrate && bun run db:generate && bun run db:seed"
 	},
 	"devDependencies": {
+		"@prisma/client": "^6.13.0",
 		"@sveltejs/adapter-auto": "^6.0.0",
 		"@sveltejs/kit": "^2.22.0",
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",
 		"@tailwindcss/vite": "^4.0.0",
+		"@tanstack/svelte-table": "^8.21.3",
+		"@tanstack/svelte-virtual": "^3.13.12",
 		"@types/node": "^24.2.0",
+		"bcryptjs": "^3.0.2",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"sweetalert2": "^11.22.2",

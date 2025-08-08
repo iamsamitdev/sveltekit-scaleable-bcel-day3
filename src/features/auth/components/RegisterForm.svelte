@@ -96,7 +96,7 @@
           />
         </svg>
       </div>
-      <h1 class="text-4xl font-bold mb-4">Join Us Today!</h1>
+      <h1 class="text-4xl font-bold mb-4">สมัครสมาชิกเพื่อเริ่มต้นใช้งาน</h1>
       <p class="text-xl opacity-90">สมัครสมาชิกเพื่อเริ่มต้นใช้งาน</p>
       <div class="mt-8">
         <div class="w-24 h-1 bg-white/30 mx-auto rounded"></div>

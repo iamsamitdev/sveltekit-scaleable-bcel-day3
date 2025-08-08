@@ -26,8 +26,8 @@
       if (response.success) {
         // Show success alert
         showAlert(
-          "Login Successful",
-          "You have successfully logged in.",
+          "เข้าสู่ระบบสำเร็จ",
+          "คุณได้เข้าสู่ระบบสำเร็จ",
           "success"
         )
         // Redirect or show success message
@@ -37,8 +37,8 @@
       } else {
         // Handle unsuccessful login
         showAlert(
-          "Login Failed",
-          "Please check your email and password.",
+          "เข้าสู่ระบบไม่สำเร็จ",
+          "กรุณาตรวจสอบอีเมลและรหัสผ่าน",
           "error"
         )
       }
@@ -46,8 +46,8 @@
     } catch (error) {
       // console.error("Login failed:", error)
       showAlert(
-        "Login Failed",
-        "Please check your email and password.",
+        "เข้าสู่ระบบไม่สำเร็จ",
+        "กรุณาตรวจสอบอีเมลและรหัสผ่าน",
         "error"
       )
       // Handle error, e.g., show error message
@@ -74,7 +74,7 @@
           />
         </svg>
       </div>
-      <h1 class="text-4xl font-bold mb-4">Welcome Back!</h1>
+      <h1 class="text-4xl font-bold mb-4">ยินดีต้อนรับกลับ!</h1>
       <p class="text-xl opacity-90">เข้าสู่ระบบเพื่อเริ่มต้นการทำงาน</p>
       <div class="mt-8">
         <div class="w-24 h-1 bg-white/30 mx-auto rounded"></div>

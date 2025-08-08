@@ -24,7 +24,7 @@ class AuthService {
     }
     return {
       success: false,
-      error: response.error || "Login failed",
+      error: response.error || "เข้าสู่ระบบไม่สำเร็จ",
       errors: response.errors,
     }
   }

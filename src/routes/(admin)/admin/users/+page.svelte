@@ -1,8 +1,13 @@
 <script lang="ts">
-  import Users from '$features/admin/components/Users.svelte'
-  
-  const title = 'Manage Users - SvelteKit Scaleable App'
-  const description = 'จัดการผู้ใช้งาน ค้นหา กรอง และจัดการบทบาท/สถานะ'
+  import Users from "$features/admin/components/Users.svelte"
+
+  let { data } = $props()
+  const users = (data as any).users || []
+
+  const title = "Manage Users - SvelteKit Scaleable App"
+  const description = "จัดการผู้ใช้งาน ค้นหา กรอง และจัดการบทบาท/สถานะ"
+
+  console.log(users)
 </script>
 
 <svelte:head>
@@ -14,4 +19,4 @@
   <meta name="og:description" content={description} />
 </svelte:head>
 
-<Users />
+<Users {users} />

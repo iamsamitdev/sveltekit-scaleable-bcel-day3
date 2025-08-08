@@ -1,68 +1,95 @@
 <script lang="ts">
-  type Role = 'admin' | 'manager' | 'user'
-  type Status = 'active' | 'pending' | 'suspended'
-  type User = {
+  type Role = "admin" | "manager" | "user"
+  type Status = "active" | "pending" | "suspended"
+
+  // ใช้ type จาก Prisma
+  type PrismaUser = {
     id: string
-    name: string
+    fullName: string
     email: string
-    role: Role
-    status: Status
-    createdAt: string
+    phoneNumber: string
+    password: string
+    createdAt: Date
+    updatedAt: Date
   }
 
-  // mock users
-  let users = $state<User[]>([
-    { id: 'U-1001', name: 'Thanakorn Jaidee', email: 'thanakorn@example.com', role: 'admin', status: 'active', createdAt: '2025-01-02' },
-    { id: 'U-1002', name: 'Pimchanok Siri', email: 'pimchanok@example.com', role: 'manager', status: 'pending', createdAt: '2025-01-10' },
-    { id: 'U-1003', name: 'Napat Wong', email: 'napat@example.com', role: 'user', status: 'active', createdAt: '2025-01-15' },
-    { id: 'U-1004', name: 'Kanyarat Mee', email: 'kanyarat@example.com', role: 'user', status: 'suspended', createdAt: '2024-12-21' },
-    { id: 'U-1005', name: 'Somchai Prasert', email: 'somchai@example.com', role: 'manager', status: 'active', createdAt: '2024-12-11' },
-    { id: 'U-1006', name: 'Arthit Boon', email: 'arthit@example.com', role: 'user', status: 'pending', createdAt: '2025-01-05' }
-  ])
+  // Type สำหรับแสดงผลใน UI (เพิ่ม role และ status)
+  type User = PrismaUser & {
+    role: Role
+    status: Status
+  }
+
+  // รับ users จาก props
+  let { users: prismaUsers = [] } = $props<{ users: PrismaUser[] }>()
+
+  // แปลง Prisma users เป็น UI users (เพิ่ม mock role และ status)
+  let users = $derived<User[]>(
+    prismaUsers.map((user: PrismaUser, index: number) => ({
+      ...user,
+      role: (["admin", "manager", "user"] as Role[])[index % 3],
+      status: (["active", "pending", "suspended"] as Status[])[index % 3],
+    }))
+  )
 
   // filters
-  let query = $state('')
-  let roleFilter = $state<'all' | Role>('all')
-  let statusFilter = $state<'all' | Status>('all')
+  let query = $state("")
+  let roleFilter = $state<"all" | Role>("all")
+  let statusFilter = $state<"all" | Status>("all")
 
   // paging
   let page = $state(1)
-  const pageSize = 8
+  const pageSize = 20
 
   const totalUsers = $derived(users.length)
-  const activeUsers = $derived(users.filter(u => u.status === 'active').length)
-  const pendingUsers = $derived(users.filter(u => u.status === 'pending').length)
-  const suspendedUsers = $derived(users.filter(u => u.status === 'suspended').length)
+  const activeUsers = $derived(
+    users.filter((u: User) => u.status === "active").length
+  )
+  const pendingUsers = $derived(
+    users.filter((u: User) => u.status === "pending").length
+  )
+  const suspendedUsers = $derived(
+    users.filter((u: User) => u.status === "suspended").length
+  )
 
   const filtered = $derived(
-    users.filter(u => {
-      const matchesQ = `${u.name} ${u.email}`.toLowerCase().includes(query.toLowerCase())
-      const matchesRole = roleFilter === 'all' ? true : u.role === roleFilter
-      const matchesStatus = statusFilter === 'all' ? true : u.status === statusFilter
+    users.filter((u: User) => {
+      const matchesQ = `${u.fullName} ${u.email}`
+        .toLowerCase()
+        .includes(query.toLowerCase())
+      const matchesRole = roleFilter === "all" ? true : u.role === roleFilter
+      const matchesStatus =
+        statusFilter === "all" ? true : u.status === statusFilter
       return matchesQ && matchesRole && matchesStatus
     })
   )
 
-  const totalPages = $derived(Math.max(1, Math.ceil(filtered.length / pageSize)))
-  const visible = $derived(filtered.slice((page - 1) * pageSize, page * pageSize))
+  const totalPages = $derived(
+    Math.max(1, Math.ceil(filtered.length / pageSize))
+  )
+  const visible = $derived(
+    filtered.slice((page - 1) * pageSize, page * pageSize)
+  )
 
   function resetPage() {
     page = 1
   }
 
   function statusBadgeClasses(status: Status) {
-    if (status === 'active') return 'bg-emerald-100 text-emerald-700'
-    if (status === 'pending') return 'bg-amber-100 text-amber-700'
-    return 'bg-rose-100 text-rose-700'
+    if (status === "active") return "bg-emerald-100 text-emerald-700"
+    if (status === "pending") return "bg-amber-100 text-amber-700"
+    return "bg-rose-100 text-rose-700"
   }
 
   function toggleSuspend(user: User) {
-    users = users.map(u => u.id === user.id ? { ...u, status: u.status === 'suspended' ? 'active' : 'suspended' } : u)
+    // Note: ในความเป็นจริงควรเรียก API เพื่ออัพเดต status ในฐานข้อมูล
+    // ตอนนี้เป็นแค่ demo เฉยๆ เพราะข้อมูลมาจาก Prisma
+    console.log(`Toggle suspend for user: ${user.fullName}`)
   }
 
   function promoteRole(user: User) {
-    const next: Record<Role, Role> = { user: 'manager', manager: 'admin', admin: 'admin' }
-    users = users.map(u => u.id === user.id ? { ...u, role: next[u.role] } : u)
+    // Note: ในความเป็นจริงควรเรียก API เพื่ออัพเดต role ในฐานข้อมูล
+    // ตอนนี้เป็นแค่ demo เฉยๆ เพราะข้อมูลมาจาก Prisma
+    console.log(`Promote role for user: ${user.fullName} from ${user.role}`)
   }
 </script>
 
@@ -71,11 +98,21 @@
   <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
       <h1 class="text-2xl md:text-3xl font-bold text-gray-900">ผู้ใช้งาน</h1>
-      <p class="text-gray-600">จัดการผู้ใช้งานของระบบ ค้นหา กรอง ดูรายละเอียด และดำเนินการ</p>
+      <p class="text-gray-600">
+        จัดการผู้ใช้งานของระบบ ค้นหา กรอง ดูรายละเอียด และดำเนินการ
+      </p>
     </div>
     <div class="flex gap-2">
-      <button type="button" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium">เพิ่มผู้ใช้</button>
-      <button type="button" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium">นำออก CSV</button>
+      <button
+        type="button"
+        class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"
+        >เพิ่มผู้ใช้</button
+      >
+      <button
+        type="button"
+        class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium"
+        >นำออก CSV</button
+      >
     </div>
   </div>
 
@@ -109,17 +146,35 @@
           bind:value={query}
           oninput={resetPage}
         />
-        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
+        <svg
+          class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"
+          />
         </svg>
       </div>
-      <select class="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm" bind:value={roleFilter} onchange={resetPage}>
+      <select
+        class="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm"
+        bind:value={roleFilter}
+        onchange={resetPage}
+      >
         <option value="all">บทบาททั้งหมด</option>
         <option value="admin">Admin</option>
         <option value="manager">Manager</option>
         <option value="user">User</option>
       </select>
-      <select class="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm" bind:value={statusFilter} onchange={resetPage}>
+      <select
+        class="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm"
+        bind:value={statusFilter}
+        onchange={resetPage}
+      >
         <option value="all">สถานะทั้งหมด</option>
         <option value="active">Active</option>
         <option value="pending">Pending</option>
@@ -129,7 +184,9 @@
   </div>
 
   <!-- Table -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+  <div
+    class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+  >
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
@@ -145,36 +202,65 @@
         <tbody>
           {#if visible.length === 0}
             <tr>
-              <td colspan="6" class="px-4 py-10 text-center text-gray-500">ไม่พบข้อมูลผู้ใช้</td>
+              <td colspan="6" class="px-4 py-10 text-center text-gray-500"
+                >ไม่พบข้อมูลผู้ใช้</td
+              >
             </tr>
           {:else}
             {#each visible as u}
               <tr class="border-t border-gray-100 hover:bg-gray-50">
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
-                      {u.name.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase()}
+                    <div
+                      class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold"
+                    >
+                      {u.fullName
+                        .split(" ")
+                        .slice(0, 2)
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase()}
                     </div>
                     <div>
-                      <div class="font-medium text-gray-900">{u.name}</div>
+                      <div class="font-medium text-gray-900">{u.fullName}</div>
                       <div class="text-xs text-gray-500">{u.id}</div>
                     </div>
                   </div>
                 </td>
                 <td class="px-4 py-3 text-gray-700">{u.email}</td>
                 <td class="px-4 py-3">
-                  <span class="px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">{u.role}</span>
+                  <span
+                    class="px-2 py-1 rounded text-xs bg-gray-100 text-gray-700"
+                    >{u.role}</span
+                  >
                 </td>
                 <td class="px-4 py-3">
-                  <span class={`px-2 py-1 rounded text-xs ${statusBadgeClasses(u.status)}`}>{u.status}</span>
+                  <span
+                    class={`px-2 py-1 rounded text-xs ${statusBadgeClasses(u.status)}`}
+                    >{u.status}</span
+                  >
                 </td>
-                <td class="px-4 py-3 text-gray-600">{u.createdAt}</td>
+                <td class="px-4 py-3 text-gray-600">
+                  {new Date(u.createdAt).toLocaleDateString("th-TH")}
+                </td>
                 <td class="px-4 py-3">
                   <div class="flex items-center justify-end gap-2">
-                    <button type="button" class="px-3 py-1.5 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">ดู</button>
-                    <button type="button" class="px-3 py-1.5 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50" onclick={() => promoteRole(u)}>เลื่อนสิทธิ์</button>
-                    <button type="button" class={`px-3 py-1.5 rounded-md border text-white ${u.status === 'suspended' ? 'bg-emerald-600 hover:bg-emerald-700 border-emerald-600' : 'bg-rose-600 hover:bg-rose-700 border-rose-600'}`} onclick={() => toggleSuspend(u)}>
-                      {u.status === 'suspended' ? 'ปลดระงับ' : 'ระงับ'}
+                    <button
+                      type="button"
+                      class="px-3 py-1.5 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                      >ดู</button
+                    >
+                    <button
+                      type="button"
+                      class="px-3 py-1.5 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                      onclick={() => promoteRole(u)}>เลื่อนสิทธิ์</button
+                    >
+                    <button
+                      type="button"
+                      class={`px-3 py-1.5 rounded-md border text-white ${u.status === "suspended" ? "bg-emerald-600 hover:bg-emerald-700 border-emerald-600" : "bg-rose-600 hover:bg-rose-700 border-rose-600"}`}
+                      onclick={() => toggleSuspend(u)}
+                    >
+                      {u.status === "suspended" ? "ปลดระงับ" : "ระงับ"}
                     </button>
                   </div>
                 </td>
@@ -186,14 +272,27 @@
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-white">
-      <div class="text-sm text-gray-600">แสดง {visible.length} จาก {filtered.length} รายการ</div>
+    <div
+      class="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-white"
+    >
+      <div class="text-sm text-gray-600">
+        แสดง {visible.length} จาก {filtered.length} รายการ
+      </div>
       <div class="flex items-center gap-2">
-        <button type="button" class="px-3 h-9 rounded-md bg-gray-100 text-gray-700 disabled:opacity-50" disabled={page <= 1} onclick={() => page = page - 1}>ก่อนหน้า</button>
+        <button
+          type="button"
+          class="px-3 h-9 rounded-md bg-gray-100 text-gray-700 disabled:opacity-50"
+          disabled={page <= 1}
+          onclick={() => (page = page - 1)}>ก่อนหน้า</button
+        >
         <span class="text-sm text-gray-700">{page} / {totalPages}</span>
-        <button type="button" class="px-3 h-9 rounded-md bg-gray-100 text-gray-700 disabled:opacity-50" disabled={page >= totalPages} onclick={() => page = page + 1}>ถัดไป</button>
+        <button
+          type="button"
+          class="px-3 h-9 rounded-md bg-gray-100 text-gray-700 disabled:opacity-50"
+          disabled={page >= totalPages}
+          onclick={() => (page = page + 1)}>ถัดไป</button
+        >
       </div>
     </div>
   </div>
 </div>
-

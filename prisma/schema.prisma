@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  fullName    String
+  email       String   @unique
+  phoneNumber String   @unique
+  password    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Indexes for faster lookups performance
+  @@index([fullName])
+  @@index([createdAt])
+  @@index([fullName, email]) // Composite index สำหรับ search
+  @@map("users")
+}
