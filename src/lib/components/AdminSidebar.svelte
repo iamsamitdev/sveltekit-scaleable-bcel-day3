@@ -10,6 +10,7 @@
     { href: '/admin/products', label: 'Products', icon: '🛒' },
     { href: '/admin/users', label: 'Users (Normal)', icon: '👥' },
     { href: '/admin/userstanstack', label: 'Users Tanstack', icon: '👥' },
+    { href: '/admin/members', label: 'Members', icon: '👥' },
     { href: '/admin/settings', label: 'Settings', icon: '⚙️' }
   ]
 
