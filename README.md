@@ -1,77 +1,96 @@
 # SvelteKit Scaleable App (Public + Admin)
 
-โปรเจกต์ตัวอย่างโครงสร้างที่ขยายได้ง่าย ใช้ SvelteKit + Svelte 5 Runes และ Tailwind CSS v4 สำหรับงาน Production แยกส่วน Public, Auth, Admin ชัดเจน พร้อมระบบ Protected Route ฝั่งเซิร์ฟเวอร์
+โปรเจกต์ตัวอย่างสำหรับ Production ที่โครงสร้างขยายง่าย ใช้ SvelteKit + Svelte 5 Runes และ Tailwind CSS v4 แยกกลุ่มหน้า Public/Auth/Admin ชัดเจน มี Service Layer, Protected Route ฝั่งเซิร์ฟเวอร์ และตัวอย่างการแสดงข้อมูลจำนวนมากด้วย Virtualization + Cursor Pagination
 
 ## Tech Stack
 - SvelteKit + Svelte 5 (Runes: `$state`, `$derived`, `$props`, ใช้ `onclick` แทน `on:click`)
 - Tailwind CSS v4 (import แบบใหม่ใน `src/app.css`)
 - TypeScript
-- REST API service (`$lib/services/api.ts`) รองรับ `FormData` และ `RequestInit` (เช่น `signal`)
+- Prisma ORM (PostgreSQL)
+- REST API service (`$lib/services/api.ts`) รองรับ `FormData` และ `RequestInit` (`signal`)
+- TanStack Virtual สำหรับแสดงผลรายการจำนวนมาก
 
-## โครงสร้างโปรเจกต์ (สรุปเฉพาะส่วนสำคัญ)
+## โครงสร้างโปรเจกต์ (สรุปส่วนสำคัญ)
 ```
 src/
-  app.css                       # ตั้งค่า Tailwind v4 และ global styles
-  hooks.server.ts               # อ่าน JWT จาก Cookie/Header -> ใส่ user/token ลง locals
+  app.css                        # Tailwind v4 + Global styles
+  hooks.server.ts                # อ่าน JWT จาก Cookie/Header -> ใส่ user/token ลง locals
   lib/
-    components/                 # Navbar/Footer/Admin Components reuse
-    layouts/                    # MainLayout, AdminLayout
+    components/                  # Navbar/Footer/Admin components reuse
+    layouts/                     # MainLayout, AdminLayout
     services/
-      api.ts                    # HTTP client get/post/put/delete รองรับ FormData
-    types/                      # api.ts, auth.ts, product.ts
+      api.ts                     # HTTP client get/post/put/delete รองรับ FormData + RequestInit
+    types/                       # api.ts, auth.ts, product.ts
   features/
     auth/
-      components/               # LoginForm, RegisterForm
+      components/                # LoginForm, RegisterForm
       services/
-        authService.ts          # login/logout/register + ตั้ง/ลบ cookie token
+        authService.ts           # login/logout/register + ตั้ง/ลบ cookie token
     admin/
       components/
-        Products.svelte         # รายการสินค้า: ค้นหา/แบ่งหน้า/ดู/แก้ไข/ลบ + modal
-        CreateProduct.svelte    # เพิ่มสินค้า + อัปโหลดรูป + พรีวิว + ลบรูป
-        UpdateProduct.svelte    # แก้ไขสินค้า + อัปโหลดรูป + พรีวิว + ลบรูป
-        Dashboard.svelte        # ตัวอย่างแดชบอร์ด
-        Users.svelte, Setting.svelte, Profile.svelte
+        Dashboard.svelte
+        Users.svelte             # ตัวอย่างตารางธรรมดา + filter + paging
+        UsersTanstack.svelte     # ตาราง virtualized + infinite loading + prefetch-all
+        Products.svelte
+        CreateProduct.svelte
+        UpdateProduct.svelte
+        Setting.svelte, Profile.svelte
       services/
-        productService.ts       # API สินค้า (list/get/create/update/delete)
+        productService.ts        # CRUD สินค้า
   routes/
-    (public)/                   # หน้า public
-    (auth)/                     # /login, /register
+    (public)/                    # หน้า public
+    (auth)/                      # /login, /register
     (admin)/
-      +layout.server.ts         # ปกป้องทุกหน้าในกลุ่ม admin ฝั่งเซิร์ฟเวอร์
+      +layout.server.ts          # ปกป้องทุกหน้าในกลุ่ม admin (server-side)
       admin/
         dashboard/+page.svelte
-        products/+page.svelte   # เรียกใช้ `Products.svelte`
-        products/create/+page.svelte
-        products/update/+page.svelte
+        users/+page.svelte       # เรียกใช้ Users.svelte
+        userstanstack/
+          +page.server.ts        # ดึง initial + nextCursor ด้วย Prisma cursor
+          +page.svelte           # เรียกใช้ UsersTanstack.svelte
+        members/
+          +page.server.ts        # นับสถิติ (count) + initial rows (สำหรับ virtualization)
+          +page.svelte           # การ์ดสรุป + ตาราง virtualized (ID/Name/Email/Phone/CreatedAt)
+    api/
+      users/+server.ts           # Endpoint โหลดเพิ่ม users (cursor-based)
+      members/+server.ts         # Endpoint โหลดเพิ่มสมาชิก (cursor-based)
 ```
 
-## Protected Route (แนวทางที่ใช้)
-- ทำบนฝั่งเซิร์ฟเวอร์ทั้งหมดเพื่อความปลอดภัยและรองรับ SSR
+## Protected Route (ฝั่งเซิร์ฟเวอร์)
+- ทำบนฝั่งเซิร์ฟเวอร์ทั้งหมดเพื่อรองรับ SSR และความปลอดภัย
 - `hooks.server.ts`
   - อ่าน JWT จาก Authorization header หรือ Cookie `token`
-  - ถอดรหัส payload ด้วย `Buffer.from(..., 'base64')`
-  - ถ้า token ยังไม่หมดอายุ ใส่ `locals.user`; เก็บ `locals.token` เสมอเมื่อมี token
+  - ถอดรหัส payload ด้วย `Buffer.from(..., 'base64')` และกัน token format ผิดพลาด
+  - พบ token ที่ยัง valid -> ตั้ง `locals.user`; เก็บ `locals.token` เสมอเมื่อพบ token
 - `(admin)/+layout.server.ts`
-  - redirect ไป `/login?next=<path>` เฉพาะกรณี “ไม่มีทั้ง `locals.user` และ `locals.token`”
+  - redirect ไป `/login?next=<path>` เมื่อ “ไม่มีทั้ง `locals.user` และ `locals.token`”
 
-หมายเหตุ: ควรให้ backend เซ็ต Cookie `token` แบบ `HttpOnly; Secure; SameSite=Lax` จาก response ของ login เพื่อความปลอดภัยสูงสุด
+หมายเหตุ: ให้ backend เซ็ต Cookie `token` แบบ `HttpOnly; Secure; SameSite=Lax` เพื่อความปลอดภัยสูงสุด
 
-## การเรียก API (Service Layer)
+## การโหลดข้อมูลจำนวนมาก (Millions Ready)
+- Server: ใช้ Prisma cursor-based pagination (`take`, `orderBy`, `cursor`) ส่ง `initial` + `nextCursor`
+- Client: ใช้ `@tanstack/svelte-virtual` ทำ virtualization + infinite loading
+- มีโหมด “โหลดทั้งหมด” แบบ incremental ใน `UsersTanstack.svelte` (prefetch-all) สำหรับ use-case ที่ต้องการดึงครบจริงๆ
+- SSR-safe: มี fallback methods สำหรับ virtualizer เมื่อเรนเดอร์ฝั่งเซิร์ฟเวอร์
+
+## Service Layer
 - `lib/services/api.ts`
   - ถ้า body เป็น `FormData` จะไม่ตั้ง `Content-Type` ให้เอง
   - ทุกเมธอดรองรับ `RequestInit` เช่น `{ signal }`
 - `features/admin/services/productService.ts`
-  - `getProducts(page, search, limit, signal?)`
-  - `getProduct(id, signal?)`
-  - `createProduct(data | FormData)`
-  - `updateProduct(id, data | FormData)` (ถ้าเป็น `FormData` จะ append `_method=PUT` และยิงผ่าน `POST`)
+  - `getProducts(page, search, limit, signal?)`, `getProduct(id, signal?)`
+  - `createProduct(data | FormData)`, `updateProduct(id, data | FormData)` (รองรับ `_method=PUT`)
   - `deleteProduct(id)`
 
-## หน้าสินค้า (Products)
+## Products (ตัวอย่าง CRUD ครบ)
 - ค้นหา/แบ่งหน้า ด้วย `$state` + `$derived` และ `AbortController`
-- ตาราง: รูปสินค้า, ชื่อ, หมวดหมู่, ราคา, วันที่สร้าง, วันที่แก้ไข
-- ปุ่ม: ดู (popup รายละเอียด), แก้ไข (ไปหน้า update), ลบ (popup ยืนยันและเรียก API)
-- ปุ่มเพิ่มสินค้า ไป `/admin/products/create`
+- ตาราง: รูปสินค้า, คอลัมน์วันที่สร้าง/แก้ไข, ปุ่มดู/แก้ไข/ลบ พร้อม modal และยืนยันการลบ
+- ปุ่มเพิ่มสินค้าไป `/admin/products/create`
+
+## Members (การ์ดสรุป + Virtualized Table)
+- `members/+page.server.ts` นับจำนวนทั้งหมด (`prisma.user.count()`) แล้วส่ง `stats` ให้หน้าเพจ
+- ดึง initial rows (100) สำหรับตาราง virtualized และคำนวณ `nextCursor`
+- `api/members/+server.ts` เป็น endpoint โหลดเพิ่มแบบ cursor-based และ normalize `fullname`
 
 ## Tailwind CSS v4
 `src/app.css`
@@ -100,14 +119,16 @@ npm run preview
 ## ตัวแปรแวดล้อม
 ```
 VITE_API_BASE_URL=https://your-api.example.com/api
+DATABASE_URL=postgresql://user:pass@host:5432/db
 ```
 
 ## แนวทางโค้ด (Guidelines)
-- ใช้ Runes แทน stores/directives เก่า (`onclick` แทน `on:click`)
-- โค้ดอ่านง่าย ชื่อสื่อความหมาย จัดการ error/edge-case ก่อน (early return)
-- A11y: ปุ่ม/ลิงก์ไอคอนล้วนใส่ `aria-label`, หลีกเลี่ยง `href="#"`
+- ใช้ Svelte Runes (`$state`, `$derived`, `$props`), ใช้ `onclick` แทน `on:click`
+- โค้ดอ่านง่าย ชื่อสื่อความหมาย จัดการ edge-cases ก่อน (early return)
+- A11y: ปุ่ม/ลิงก์ไอคอนล้วนใส่ `aria-label`, หลีกเลี่ยง `href="#"` หากไม่ใช่ลิงก์จริง
+- Performance: เลี่ยงโหลด “ทั้งหมดทีเดียว”, ใช้ cursor + virtualization, debounce การค้นหา, ใช้ `AbortController`
 
-## การดีบักปัญหา Login/Protected
-- ตรวจ Cookie `token` หลัง login
-- ตรวจ Log ของ `hooks.server.ts` ว่าอ่าน token และตั้ง `locals` แล้วหรือไม่
-- ตรวจ `VITE_API_BASE_URL` ให้ถูกต้องกับเซิร์ฟเวอร์ API
+## การดีบัก
+- ตรวจ Cookie `token` หลัง login และค่าใน `locals` ผ่าน log ของ `hooks.server.ts`
+- ตรวจ API endpoints (`/api/users`, `/api/members`) ว่าคืน `nextCursor` ถูกต้อง
+- ตรวจค่า `VITE_API_BASE_URL` และ `DATABASE_URL`
